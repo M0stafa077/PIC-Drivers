@@ -56,5 +56,3 @@ I hope this repository becomes a valuable resource for your PIC18F4620 projects,
 
 Thank you for your interest in my **PIC18F4620 Drivers** repository, and I wish you the best in all your endeavors as you embark on your own embedded systems journey! 🚀
 ```
-
-Feel free to customize and enhance this README.md file according to your specific needs. Happy coding! 🌟
