@@ -55,4 +55,3 @@ The ECUAL layer can be customized based on your specific application requirement
 I hope this repository becomes a valuable resource for your PIC18F4620 projects, and that you find inspiration in developing your own drivers for other microcontrollers and projects. Your contributions are welcome! Feel free to create pull requests or open issues if you have any suggestions or improvements.
 
 Thank you for your interest in my **PIC18F4620 Drivers** repository, and I wish you the best in all your endeavors as you embark on your own embedded systems journey! 🚀
-```
