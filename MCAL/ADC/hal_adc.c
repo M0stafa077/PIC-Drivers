@@ -1,24 +1,45 @@
-/*
- * File:   hal_adc.c
+/* 
+ * File  : hal_adc.c
  * Author: Mostafa Asaad
- *
+ * https://github.com/M0stafa077
  * Created on January 27, 2024, 4:03 PM
  */
 /* --------------- Section : Includes --------------- */
 #include "hal_adc.h"
 /* --------------- Section : Global Variables --------------- */
 #if ADC_INTERRUPT_FEATURE == INTERRUPT_ENABLE
+/*
+ * @brief A static pointer to the Interrupt Service
+ * Routine function for the ADC module interrupts.
+ */
 static interrupt_handler_t ADC_interrupt_handler = NULL;
 #endif
 /*---------------  Section: Helper Functions Declaration --------------- */
+
+/**
+ * @brief A static software interface configures 
+ * the selected adc channel as input pin.
+ * @param _adc : Pointer to the adc module object.
+ */
 static void adc_input_channel_port_cfg(const adc_cfg_t *_adc);
+/**
+ * @brief A static software interface configures 
+ * the result format for the ADC module.
+ * @param _adc : Pointer to the adc module object.
+ */
 static void adc_set_result_format(const adc_cfg_t *_adc);
+/**
+ * @brief A static software interface configures 
+ * the voltage reference for the ADC module.
+ * @param _adc : Pointer to the adc module object.
+ */
 static void adc_set_voltage_ref(const adc_cfg_t *_adc);
 /*---------------  Section: Functions Definition --------------- */
+
 /**
- * A software interface initializes the ADC module.
+ * @brief A software interface initializes the 
+ * A/D module.
  * @param _adc : Pointer to the adc module object.
- * @brief : 
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
@@ -74,11 +95,9 @@ Std_ReturnType ADC_init(const adc_cfg_t *_adc)
     }
     return ret;
 }
-
 /**
-* A software interface de-initializes the ADC module. 
+ * @brief A software interface de-initializes the ADC module. 
  * @param _adc : Pointer to the adc module object.
- * @brief : 
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action 
@@ -101,12 +120,10 @@ Std_ReturnType ADC_deInit(const adc_cfg_t *_adc)
     }
     return ret;
 }
-
-/**
-* A software interface selects the channel for the ADC module.
+/*
+ * @brief A software interface selects the channel for the ADC module.
  * @param _adc : Pointer to the adc module object.
  * @param channel : The channel to be selected.
- * @brief : 
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
@@ -128,9 +145,8 @@ Std_ReturnType ADC_select_channel(adc_cfg_t *_adc, ADC_channel_select_t channel)
 }
 
 /**
- * 
+ * @brief A software interface starts the conversion.
  * @param _adc : Pointer to the adc module object.
- * @brief : Starts the conversion.
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
@@ -148,14 +164,11 @@ Std_ReturnType ADC_start_conversion(const adc_cfg_t *_adc)
     }
     return ret;
 }
-
 /**
- * 
+ * @brief A software interface checks the status
+ * of the A/D conversion.
  * @param _adc : Pointer to the adc module object.
  * @param status : The variable ref to store the status in.
- * @brief : The conversion status
- *          true  - If conversion is completed
- *          false - If conversion is in progress
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
@@ -168,8 +181,7 @@ Std_ReturnType ADC_is_conversion_done(const adc_cfg_t *_adc, uint8_t* status)
         ret = E_NOT_OK;
     }
     else
-    {
-        
+    {        
         if (STD_TRUE == ADC_CONVERSION_STATUS())
         {
             *status = ADC_CONVERSION_IN_PROGRESS;
@@ -183,12 +195,11 @@ Std_ReturnType ADC_is_conversion_done(const adc_cfg_t *_adc, uint8_t* status)
     }
     return ret;
 }
-
 /**
- * 
+ * @brief A software interface gets the
+ * result of the A/D conversion
  * @param _adc : Pointer to the adc module object.
  * @param result : The variable ref to store the result in.
- * @brief : 
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
@@ -218,19 +229,17 @@ Std_ReturnType ADC_get_conversion_result(const adc_cfg_t *_adc, adc_result_t *re
     }
     return ret; 
 }
-
-/**
- * 
+/*
+ * @brief A software interface gets the
+ * result of the A/D conversion by blocking.
  * @param _adc : Pointer to the adc module object.
  * @param channel : The Channel to be selected.
  * @param conversion_result : The variable ref to store the status in.
- * @brief : 
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
  */
-Std_ReturnType ADC_get_conversion_blocking(const adc_cfg_t *_adc, ADC_channel_select_t channel, 
-                                 adc_result_t *conversion_result)
+Std_ReturnType ADC_get_conversion_blocking(const adc_cfg_t *_adc, adc_result_t *conversion_result)
 {
     Std_ReturnType ret = E_OK;
     if (NULL == _adc || NULL == conversion_result)
@@ -239,25 +248,21 @@ Std_ReturnType ADC_get_conversion_blocking(const adc_cfg_t *_adc, ADC_channel_se
     }
     else
     {
-        ret = ADC_select_channel(_adc, channel);
         ret = ADC_start_conversion(_adc);
         while(ADC_CONVERSION_STATUS());
         ret = ADC_get_conversion_result(_adc, conversion_result);
     }
     return ret; 
 }
-
-/**
- * 
+/*
+ * @brief A software interface starts the A/D
+ * conversion using interrupt feature.
  * @param _adc : Pointer to the adc module object.
- * @param channel : The Channel to be selected.
- * @param conversion_result : The variable ref to store the status in.
- * @brief : 
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
  */
-Std_ReturnType ADC_start_conversion_interrupt(const adc_cfg_t *_adc, ADC_channel_select_t channel)
+Std_ReturnType ADC_start_conversion_interrupt(const adc_cfg_t *_adc)
 {
     Std_ReturnType ret = E_OK;
     if (NULL == _adc)
@@ -266,56 +271,53 @@ Std_ReturnType ADC_start_conversion_interrupt(const adc_cfg_t *_adc, ADC_channel
     }
     else
     {
-        ret = ADC_select_channel(_adc, channel);
         ret = ADC_start_conversion(_adc);
     }
     return ret; 
 }
-
 /*---------------  Section: Helper Functions Definition --------------- */
 
 /**
- * 
+ * @brief A static software interface configures 
+ * the selected adc channel as input pin.
  * @param _adc : Pointer to the adc module object.
- * @brief : A Helper function to set the channel pin as Input.
  */
 static void adc_input_channel_port_cfg(const adc_cfg_t *_adc)
 {
     switch (_adc->adc_channel)
     {
-        case ADC_CHANNEL_AN0  : SET_BIT(TRISA, _TRISA_RA0_POSN);
+        case ADC_CHANNEL_AN0  : SET_BIT(TRISA, PIN0_INDEX);
                             break;
-        case ADC_CHANNEL_AN1  : SET_BIT(TRISA, _TRISA_RA1_POSN);
+        case ADC_CHANNEL_AN1  : SET_BIT(TRISA, PIN1_INDEX);
                             break;
-        case ADC_CHANNEL_AN2  : SET_BIT(TRISA, _TRISA_RA2_POSN);
+        case ADC_CHANNEL_AN2  : SET_BIT(TRISA, PIN2_INDEX);
                             break;
-        case ADC_CHANNEL_AN3  : SET_BIT(TRISA, _TRISA_RA3_POSN);
+        case ADC_CHANNEL_AN3  : SET_BIT(TRISA, PIN3_INDEX);
                             break;
-        case ADC_CHANNEL_AN4  : SET_BIT(TRISA, _TRISA_RA5_POSN);
+        case ADC_CHANNEL_AN4  : SET_BIT(TRISA, PIN5_INDEX);
                             break;
-        case ADC_CHANNEL_AN5  : SET_BIT(TRISE, _TRISE_RE0_POSN);
+        case ADC_CHANNEL_AN5  : SET_BIT(TRISE, PIN0_INDEX);
                             break;
-        case ADC_CHANNEL_AN6  : SET_BIT(TRISE, _TRISE_RE1_POSN);
+        case ADC_CHANNEL_AN6  : SET_BIT(TRISE, PIN1_INDEX);
                             break;
-        case ADC_CHANNEL_AN7  : SET_BIT(TRISE, _TRISE_RE2_POSN);
+        case ADC_CHANNEL_AN7  : SET_BIT(TRISE, PIN2_INDEX);
                             break;
-        case ADC_CHANNEL_AN8  : SET_BIT(TRISB, _TRISB_RB2_POSN);
+        case ADC_CHANNEL_AN8  : SET_BIT(TRISB, PIN2_INDEX);
                             break;
-        case ADC_CHANNEL_AN9  : SET_BIT(TRISB, _TRISB_RB3_POSN);
+        case ADC_CHANNEL_AN9  : SET_BIT(TRISB, PIN3_INDEX);
                             break;
-        case ADC_CHANNEL_AN10 : SET_BIT(TRISB, _TRISB_RB1_POSN);
+        case ADC_CHANNEL_AN10 : SET_BIT(TRISB, PIN1_INDEX);
                             break;
-        case ADC_CHANNEL_AN11 : SET_BIT(TRISB, _TRISB_RB4_POSN);
+        case ADC_CHANNEL_AN11 : SET_BIT(TRISB, PIN4_INDEX);
                             break;
-        case ADC_CHANNEL_AN12 : SET_BIT(TRISB, _TRISB_RB0_POSN);
+        case ADC_CHANNEL_AN12 : SET_BIT(TRISB, PIN0_INDEX);
                             break;
     }
 }
-
 /**
- * 
+ * @brief A static software interface configures 
+ * the result format for the ADC module.
  * @param _adc : Pointer to the adc module object.
- * @brief : A Helper function to set the specified result format.
  */
 static void adc_set_result_format(const adc_cfg_t *_adc)
 {
@@ -329,11 +331,10 @@ static void adc_set_result_format(const adc_cfg_t *_adc)
               break;
     }       
 }
-
 /**
- * 
+ * @brief A static software interface configures 
+ * the voltage reference for the ADC module.
  * @param _adc : Pointer to the adc module object.
- * @brief : A Helper function to set the specified Voltage Reference.
  */
 static void adc_set_voltage_ref(const adc_cfg_t *_adc)
 {
@@ -349,7 +350,7 @@ static void adc_set_voltage_ref(const adc_cfg_t *_adc)
 }
 
 /**
- * @brief : (A/D) Interrupt Handler.
+ * @brief ADC module Interrupt Handler.
  */
 void INTI_ADC_ISR(void)
 {
