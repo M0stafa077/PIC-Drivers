@@ -1,7 +1,7 @@
 /* 
- * File:   hal_adc.h
+ * File  : hal_adc.h
  * Author: Mostafa Asaad
- *
+ * https://github.com/M0stafa077
  * Created on January 27, 2024, 4:03 PM
  */
 
@@ -12,14 +12,14 @@
 #include "hal_adc_cfg.h"
 #include "../DIO/DIO.h"
 #include "../Interrupt/INT_interrupts/MCAL_INTI.h"
-
 /* --------------- Section: Macro Declarations --------------- */
 
 /**
- * @brief : Analog-To-Digital Port Configuration Control
- * @note  : When ADC_AN4_ANALOG_FUNCTIONALITY is configured, this means
+ * @brief Analog-To-Digital Port Configuration Control
+ * @note  When ADC_AN4_ANALOG_FUNCTIONALITY is configured, this means
  *          AN4,AN3,AN2,AN1,AN0 are Analog functionality.
  */
+
 #define ADC_AN0_ANALOG_FUNCTIONALITY        0x0E
 #define ADC_AN1_ANALOG_FUNCTIONALITY        0x0D
 #define ADC_AN2_ANALOG_FUNCTIONALITY        0x0C
@@ -45,37 +45,32 @@
 #define ADC_CONVERSION_COMPLETE             STD_TRUE
 #define ADC_CONVERSION_IN_PROGRESS          STD_FALSE
 /* --------------- Section: Macro Functions Declarations --------------- */
+
 /**
- * @brief : (A/D) Control.
- * @Explaination : in (ADCON0 register), bit0 (ADON)
- *                 1 = (A/D) Converter module is enabled.
- *                 0 = (A/D) Converter module is disabled.
- * @note  : ADC_CONVERTER_ENABLE()  : Enables  the (A/D).
- *          ADC_CONVERTER_DISABLE() : Disables the (A/D).
+ * @brief Enable the ADC module
  */
 #define ADC_ENABLE()                        (ADCON0bits.ADON = STD_ENABLE)
+/**
+ * @brief Disable the ADC module.
+ */
 #define ADC_DISABLE()                       (ADCON0bits.ADON = STD_DISABLE)
 
 /**
  * @brief Start the Analog-To-Digital Conversion
- * @Explaination : in (ADCON0 register), bit1 (GO/DONE)
- *                 When ADON = 1:
- *                  1 = (A/D) starts conversion. 
- *                  0 = (A/D) Idle
  */
 #define ADC_START_CONVERSION()              (ADCON0bits.GODONE = STD_ACTIVE)
+/**
+ * @brief Stops the Analog-To-Digital Conversion
+ */
 #define ADC_STOP_CONVERSION()               (ADCON0bits.GODONE = STD_IDLE)
 
-/* @brief : (A/D) Conversion Status (A/D) conversion in progress or (A/D) Idle
- * @Explaination : in (ADCON0 register), bit1 (GO/DONE)
- *                 When ADON = 1:
- *                  1 = (A/D) conversion in progress  
- *                  0 = (A/D) Idle
+/* @brief (A/D) Conversion Status (A/D) conversion
+ * in progress or (A/D) Idle.
  */
 #define ADC_CONVERSION_STATUS()             (ADCON0bits.GO_nDONE)
 
-/* @brief : (A/D) Channel selector.
- * @Explaination : in (ADCON0 register), bits (2 => 5)
+/* @brief (A/D) Channel selector.
+ * @note  in (ADCON0 register), bits (2 => 5)
  *                  13 Channels need 4 bits.
  *                  (0000) = Channel 0  (AN0)  (RA0)
  *                  (0001) = Channel 1  (AN1)  (RA1)
@@ -94,8 +89,8 @@
 #define ADC_SELECT_CHANNEL(_CHANNEL)        (ADCON0bits.CHS = _CHANNEL)
     
 /**
- * @brief : (A/D) Acquisition Time Configuration.
- * @note  : ACQT2:ACQT0: (A/D) Acquisition Time Select bits
+ * @brief (A/D) Acquisition Time Configuration.
+ * @note  ACQT2:ACQT0: (A/D) Acquisition Time Select bits
  *          111 = 20 TAD
  *          110 = 16 TAD
  *          101 = 12 TAD
@@ -151,8 +146,13 @@
 #define ADC_RESULT_FORMAT()                 (ADCON2bits.ADFM)
 
 /* --------------- Section: Data Type Declarations --------------- */
+
 /*
- * Analog Channel Selectors
+ * @note an unsigned short value.
+ */
+typedef uint16_t adc_result_t;
+/*
+ * @brief Analog Channel Selectors
  */
 typedef enum
 {
@@ -207,36 +207,139 @@ typedef enum{
     ADC_CONVERSION_CLOCK_FOSC_DIV_64
 }adc_conversion_clock_t;
 
-
+/*
+ * @brief A structure for the ADC module 
+ * configurations.
+ */
 typedef struct 
 {
 #if ADC_INTERRUPT_FEATURE==INTERRUPT_ENABLE
-    //void (* ADC_InterruptHandler)(void);
+    /*
+     * @brief The interrupt handler for
+     * the ADC module.
+     */
     interrupt_handler_t ADC_InterruptHandler;
 #if INTERRUPT_PRIORITY_FEATURE==INTERRUPT_ENABLE
+    /*
+     * @brief The priority for the ADC module
+     * Interrupts.
+     * @options PRIORITY_HIGH or PRIORITY_LOW
+     */
     interrupt_priority_t priority;
 #endif
 #endif
+    /*
+     * @brief The ADC module acquisition time.
+     * @note ADC_0_ATD or ADC_12_ATD till ADC_20_ATD
+     * @ref hal_adc.h/ADC_acquisition_time_t
+     */
     ADC_acquisition_time_t acquisition_time;
+    /*
+     * @brief The ADC conversion clock
+     * configurations.
+     * @ref hal_adc.h/adc_conversion_clock_t
+     */
     adc_conversion_clock_t conversion_clock;
+    /*
+     * @brief The ADC channel on the MCU.
+     * @note ADC_CHANNEL_AN3 or ADC_CHANNEL_AN6
+     * @ref hal_adc.h/ADC_channel_select_t
+     */
     ADC_channel_select_t   adc_channel;
+    /*
+     * @brief The voltage reference for 
+     * the ADC module
+     * @note ADC_VOLTAGE_REFERENCE_ENABLED 
+     * or ADC_VOLTAGE_REFERENCE_ENABLED
+     */
     uint8_t voltage_reference :1;
+    /*
+     * @brief The result format for
+     * the ADC module.
+     * @note ADC_RESULT_RIGHT or ADC_RESULT_LEFT
+     */
     uint8_t result_format     :1;
+    /*
+     * @note Six reserved bits
+     * for the ADC configurations
+     * structure.
+     */
     uint8_t adc_reserved      :6;  
-    
 } adc_cfg_t;
-
-typedef uint16_t adc_result_t;
 /*---------------  Section: Function Declarations --------------- */
+
+/**
+ * @brief A software interface initializes the 
+ * A/D module.
+ * @param _adc : Pointer to the adc module object.
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action
+ */
 Std_ReturnType ADC_init(const adc_cfg_t *_adc);
+/**
+ * @brief A software interface de-initializes the ADC module. 
+ * @param _adc : Pointer to the adc module object.
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action 
+ */
 Std_ReturnType ADC_deInit(const adc_cfg_t *_adc);
+/*
+ * @brief A software interface selects the channel for the ADC module.
+ * @param _adc : Pointer to the adc module object.
+ * @param channel : The channel to be selected.
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action
+ */
 Std_ReturnType ADC_select_channel(adc_cfg_t *_adc, ADC_channel_select_t channel);
+/**
+ * @brief A software interface starts the conversion.
+ * @param _adc : Pointer to the adc module object.
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action
+ */
 Std_ReturnType ADC_start_conversion(const adc_cfg_t *_adc);
+/**
+ * @brief A software interface checks the status
+ * of the A/D conversion.
+ * @param _adc : Pointer to the adc module object.
+ * @param status : The variable ref to store the status in.
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action
+ */
 Std_ReturnType ADC_is_conversion_done(const adc_cfg_t *_adc, uint8_t* status);
+/**
+ * @brief A software interface gets the
+ * result of the A/D conversion
+ * @param _adc : Pointer to the adc module object.
+ * @param result : The variable ref to store the result in.
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action
+ */
 Std_ReturnType ADC_get_conversion_result(const adc_cfg_t *_adc, adc_result_t *result);
-Std_ReturnType ADC_get_conversion_blocking(const adc_cfg_t *_adc, ADC_channel_select_t channel, 
-                                 adc_result_t *conversion_result);
-Std_ReturnType ADC_start_conversion_interrupt(const adc_cfg_t *_adc, ADC_channel_select_t channel);
-
+/*
+ * @brief A software interface gets the
+ * result of the A/D conversion by blocking.
+ * @param _adc : Pointer to the adc module object.
+ * @param channel : The Channel to be selected.
+ * @param conversion_result : The variable ref to store the status in.
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action
+ */
+Std_ReturnType ADC_get_conversion_blocking(const adc_cfg_t *_adc, adc_result_t *conversion_result);
+/*
+ * @brief A software interface starts the A/D 
+ * conversion using interrupt feature.
+ * @param _adc : Pointer to the adc module object.
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action
+ */
+Std_ReturnType ADC_start_conversion_interrupt(const adc_cfg_t *_adc);
 #endif	/* HAL_ADC_H */
-
