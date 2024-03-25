@@ -29,7 +29,7 @@ By developing these drivers myself, I have endeavored to ensure high quality, op
 7. **Timers (0, 1, 2, 3)**: Timer functionality for precise timing and event triggering.
 8. **UART Module**: Serial communication via UART.
 
-### ECUAL (External Control Abstraction Layer)
+### ECUAL (Electronic Unit Abstraction Layer)
 
 The ECUAL layer can be customized based on your specific application requirements. It includes drivers for the following components:
 
