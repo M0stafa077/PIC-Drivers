@@ -12,7 +12,7 @@ By developing these drivers myself, I have endeavored to ensure high quality, op
 
 - **Code Quality**: The drivers are meticulously crafted, adhering to best practices and coding standards. I've paid attention to details such as variable naming, code modularity, and error handling.
 
-- **Organization**: The repository structure is well-organized. You'll find clear separation between the **MCAL (Microcontroller Abstraction Layer)** and the **ECUAL (External Control Abstraction Layer)**. Each driver resides in its own folder, making it easy to locate and work with specific components.
+- **Organization**: The repository structure is well-organized. You'll find clear separation between the **MCAL (Microcontroller Abstraction Layer)** and the **ECUAL (Electronic Unit Abstraction Layer)**. Each driver resides in its own folder, making it easy to locate and work with specific components.
 
 - **Documentation**: Comprehensive documentation accompanies each driver. You'll find detailed explanations of how to use the drivers, including initialization, configuration, and usage examples. I've also included comments within the code to enhance readability.
 
@@ -29,7 +29,7 @@ By developing these drivers myself, I have endeavored to ensure high quality, op
 7. **Timers (0, 1, 2, 3)**: Timer functionality for precise timing and event triggering.
 8. **UART Module**: Serial communication via UART.
 
-### ECUAL (External Control Abstraction Layer)
+### ECUAL (Electronic Unit Abstraction Layer)
 
 The ECUAL layer can be customized based on your specific application requirements. It includes drivers for the following components:
 
