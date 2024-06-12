@@ -286,7 +286,7 @@ Std_ReturnType I2C_Write_Byte_Blocking(const i2c_t *i2c_obj, const uint8_t data,
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
  */
-Std_ReturnType I2C_Read_Byte(const i2c_t *i2c_obj, uint8_t ack, uint8_t *data)
+Std_ReturnType I2C_Read_Byte_Blocking(const i2c_t *i2c_obj, uint8_t ack, uint8_t *data)
 {
     Std_ReturnType ret = E_OK;
     if(NULL == i2c_obj || NULL == data)
@@ -295,7 +295,28 @@ Std_ReturnType I2C_Read_Byte(const i2c_t *i2c_obj, uint8_t ack, uint8_t *data)
     }
     else
     {
-        
+        /* Enable the receive by Master Mode */
+        I2C_MASTER_RECEIVE_ENABLE();
+        /* Wait for the Reception to complete */
+        WAIT(!SSPSTATbits.BF);
+        /* Store the received data */
+        *data = SSPBUF;
+        /* Send ACK or NACK after the reception */
+        switch(ack)
+        {
+            case I2C_MASTER_ACK:
+                SSPCON2bits.ACKDT = I2C_MASTER_ACK;
+                SSPCON2bits.ACKEN = 1;
+                WAIT(SSPCON2bits.ACKEN);
+                break;
+            case I2C_MASTER_NACK:
+                SSPCON2bits.ACKDT = I2C_MASTER_NACK;
+                SSPCON2bits.ACKEN = 1;
+                WAIT(SSPCON2bits.ACKEN);
+                break;
+            default: /* Nothing */
+                break;
+        }
     }
     return ret;
 }
