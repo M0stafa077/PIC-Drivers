@@ -32,6 +32,9 @@
 
 #define I2C_SMBUS_ENABLE                STD_ENABLE
 #define I2C_SMBUS_DISABLE               STD_DISABLE
+
+#define I2C_MASTER_ACK                  STD_LOW
+#define I2C_MASTER_NACK                 STD_HIGH
 /* --------------- Section: Macro Functions Declarations --------------- */
 
 /*
@@ -155,6 +158,8 @@
 
 #define I2C_START_STATUS()              (SSPSTATbits.START)
 #define I2C_STOP_STATUS()               (SSPSTATbits.STOP)
+
+#define I2C_MASTER_RECEIVE_ENABLE()     (SSPCON2bits.RCEN = STD_HIGH)
 /* --------------- Section: Data Type Declarations --------------- */
 typedef enum
 {
@@ -288,7 +293,7 @@ Std_ReturnType I2C_Write_Byte_Blocking(const i2c_t *i2c_obj, const uint8_t data,
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
  */
-Std_ReturnType I2C_Read_Byte(const i2c_t *i2c_obj, uint8_t ack, uint8_t *data);
+Std_ReturnType I2C_Read_Byte_Blocking(const i2c_t *i2c_obj, uint8_t ack, uint8_t *data);
 
 #endif	/* I2C_H */
 
