@@ -165,7 +165,7 @@ Std_ReturnType I2C_Master_Send_Start(const i2c_t *i2c_obj)
         /* Clear the Interrupt flag */
         INTI_I2C_CLR_FLAG();
         /* Check the detection of the start condition on the bus */
-        if(I2C_START_CONDITION_DETECTED == I2C_START_STATUS())
+        if(I2C_START_CONDITION_DETECTED == I2C_START_STATUS)
         {
             ret = E_OK;
         }
@@ -248,11 +248,13 @@ Std_ReturnType I2C_Master_Send_Stop(const i2c_t *i2c_obj)
  * @param i2c_obj A pointer to an i2c configuration
  * structure
  * @param data The data to be written on the I2C bus.
+ * @param ack_state a pointer to a uint8_t to hold the 
+ * acknowledge state received from the receiver.
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
  */
-Std_ReturnType I2C_Write_Byte(const i2c_t *i2c_obj, const uint8_t data)
+Std_ReturnType I2C_Write_Byte_Blocking(const i2c_t *i2c_obj, const uint8_t data, uint8_t *ack_state)
 {
     Std_ReturnType ret = E_OK;
     if(NULL == i2c_obj)
@@ -261,7 +263,14 @@ Std_ReturnType I2C_Write_Byte(const i2c_t *i2c_obj, const uint8_t data)
     }
     else
     {
-        
+        /* Write the byte into the Buffer Register */
+        SSPBUF = data;
+        /* Wait for the data in buffer register to be put in the shift register */
+        WAIT(SSPSTAT.BF);
+        /* Clear the Interrupt flag */
+        INTI_I2C_CLR_FLAG();
+        /* Process the ack state received */
+        *ack_state = SSPCON2bits.ACKSTAT;
     }
     return ret;
 }
