@@ -35,6 +35,7 @@
 
 #define I2C_MASTER_ACK                  STD_LOW
 #define I2C_MASTER_NACK                 STD_HIGH
+
 /* --------------- Section: Macro Functions Declarations --------------- */
 
 /*
@@ -149,17 +150,31 @@
  * SMBUS in the I2C mode.
  */
 #define I2C_SMBUS_SET_DISABLE()         (SSPSTATbits.CKE = I2C_SMBUS_DISABLE)  
+/*
+ * A function-like-macro returns the status 
+ * of a START condition if issued on the bus.
+ */
+#define I2C_START_STATUS()              (SSPSTATbits.START)
+/*
+ * A function-like-macro returns the status 
+ * of a STOP condition if issued on the bus.
+ */
+#define I2C_STOP_STATUS()               (SSPSTATbits.STOP)
+/*
+ * A function-like-macro Enables the reception
+ * for a master.
+ */
+#define I2C_MASTER_RECEIVE_ENABLE()     (SSPCON2bits.RCEN = STD_HIGH)
 
 /*
- * A function-like-macro waits blockingly 
- * for an event.
+ * A function-like-macro stretches the clock line.
  */
-#define WAIT(SOME_THING)                (while(SOME_THING))
+#define I2C_CLOCK_STRTCH()              (SSPCON1bits.CKP = STD_LOW)
 
-#define I2C_START_STATUS()              (SSPSTATbits.START)
-#define I2C_STOP_STATUS()               (SSPSTATbits.STOP)
-
-#define I2C_MASTER_RECEIVE_ENABLE()     (SSPCON2bits.RCEN = STD_HIGH)
+/*
+ * A function-like-macro releases the clock line.
+ */
+#define I2C_CLOCK_RELEASE()             (SSPCON1bits.CKP = STD_HIGH)
 /* --------------- Section: Data Type Declarations --------------- */
 typedef enum
 {
@@ -294,6 +309,17 @@ Std_ReturnType I2C_Write_Byte_Blocking(const i2c_t *i2c_obj, const uint8_t data,
  *          (E_NOT_OK) : The function has issue to perform this action
  */
 Std_ReturnType I2C_Read_Byte_Blocking(const i2c_t *i2c_obj, uint8_t ack, uint8_t *data);
+/**
+ * @brief A software interface does all the steps to
+ * write a byte on the i2c bus.
+ * @param data The data to be sent on the bus
+ * @param address The address of the slave to receive
+ * the data
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action
+ */
+Std_ReturnType I2C_Send_Byte(const i2c_t *i2c_obj, uint8_t data, uint8_t address);
 
 #endif	/* I2C_H */
 
