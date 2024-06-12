@@ -165,7 +165,7 @@ Std_ReturnType I2C_Master_Send_Start(const i2c_t *i2c_obj)
         /* Clear the Interrupt flag */
         INTI_I2C_CLR_FLAG();
         /* Check the detection of the start condition on the bus */
-        if(I2C_START_CONDITION_DETECTED == I2C_START_STATUS)
+        if(I2C_START_CONDITION_DETECTED == I2C_START_STATUS())
         {
             ret = E_OK;
         }
@@ -223,7 +223,21 @@ Std_ReturnType I2C_Master_Send_Stop(const i2c_t *i2c_obj)
     }
     else
     {
-        
+        /* Set the START Enable bit */
+        I2C_MASTER_STOP_CONDITION();
+        /* Wait for the START condition to be transmitted on the bus */
+        WAIT(SSPCON2bits.PEN);
+        /* Clear the Interrupt flag */
+        INTI_I2C_CLR_FLAG();
+        /* Check the detection of the start condition on the bus */
+        if(I2C_STOP_CONDITION_DETECTED == I2C_STOP_STATUS())
+        {
+            ret = E_OK;
+        }
+        else
+        {
+            ret = E_NOT_OK;
+        }
     }
     return ret;
 }
