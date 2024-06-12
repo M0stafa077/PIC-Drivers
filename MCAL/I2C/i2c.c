@@ -37,15 +37,25 @@ Std_ReturnType I2C_Init(const i2c_t *i2c_obj)
         I2C_MODULE_SET_DISABLE();
         
         /* 2. Configure the I2C mode */
-        I2C_SET_MODE(i2c_obj->i2c_cfg.i2c_mode_config);
+        I2C_SET_MODE((i2c_obj->i2c_cfg.i2c_mode_config));
+        
         switch(i2c_obj->i2c_cfg.i2c_mode)
         {
-            case I2C_MASTER_MODE :                 
-                /* Write the rate in the SSPADD register */
-                SSPADD = (uint8_t)(((_XTAL_FREQ) / (4 * i2c_obj->i2c_master_clock_freq)) - 1);   
+            case I2C_MASTER_MODE :
+                /* Configure the clock */
+                switch(i2c_obj->i2c_cfg.i2c_mode_config)
+                {
+                    case I2C_MASTER_MODE_SW_CLOCK: /* NOT DETERMINED */
+                        break;
+                    case I2C_MASTER_MODE_SSPADD_CLOCK:
+                        SSPADD = (uint8_t) (((_XTAL_FREQ / 4.0) / (i2c_obj->i2c_master_clock_freq)) - 1);
+                        break;
+                    default: /* Nothing */
+                        break;
+                }  
                break;
            case I2C_SLAVE_MODE :
-               /* Configure the general call */
+               /* 1. Configure the general call */
                switch(i2c_obj->i2c_cfg.i2c_general_call_stat)
                {
                    case I2C_GENERAL_CALL_ENABLE : I2C_GENERAL_CALL_SET_ENABLE();
@@ -56,17 +66,17 @@ Std_ReturnType I2C_Init(const i2c_t *i2c_obj)
                        break;
                }
                
-               /* Clear write collision detect bit */
+               /* 2. Clear write collision detect bit */
                I2C_CLR_WCOL_BIT();
                
-               /* Clear the overflow indicator bit */
+               /* 3. Clear the overflow indicator bit */
                I2C_CLR_SSPOV_BIT();
                
-               /* Release the clock line */
+               /* 4. Release the clock line */
                I2C_RELEASE_SCL();
                
-               /* Assign the slave address */
-               SSPADD = i2c_obj -> i2c_cfg.i2c_slave_address;
+               /* 5. Assign the device Slave address */
+               SSPADD = (i2c_obj -> i2c_cfg.i2c_slave_address);
                break;
            default : 
                ret = E_NOT_OK;
@@ -99,7 +109,10 @@ Std_ReturnType I2C_Init(const i2c_t *i2c_obj)
         }
         
         /* Configure the interrupts */
+        I2C_Interrupt_Cfg(i2c_obj);
         
+        /* Enable the I2C module */
+        I2C_MODULE_SET_ENABLE();
     }
     return ret;
 }
@@ -145,7 +158,21 @@ Std_ReturnType I2C_Master_Send_Start(const i2c_t *i2c_obj)
     }
     else
     {
-        
+        /* Set the START Enable bit */
+        I2C_MASTER_START_CONDITION();
+        /* Wait for the START condition to be transmitted on the bus */
+        WAIT(SSPCON2bits.SEN);
+        /* Clear the Interrupt flag */
+        INTI_I2C_CLR_FLAG();
+        /* Check the detection of the start condition on the bus */
+        if(I2C_START_CONDITION_DETECTED == I2C_START_STATUS)
+        {
+            ret = E_OK;
+        }
+        else
+        {
+            ret = E_NOT_OK;
+        }
     }
     return ret;
 }
@@ -251,7 +278,7 @@ static void I2C_Interrupt_Cfg(const i2c_t *i2c_obj)
 /* Enable the Interrupts for the SPI module */
     INTI_I2C_INTERRUPT_ENABLE();
     /* Assign the Interrupt handlers */
-    I2C_Default_Interrupt_Handler = i2c_obj -> i2c_interrupt_handler;
+    I2C_Default_Interrupt_Handler = i2c_obj -> i2c_default_interrupt_handler;
     I2C_Default_Write_Collision_Handler = i2c_obj->i2c_write_collision_handler;
     I2C_Default_Overflow_Handler = i2c_obj->i2c_receive_overflow_handler;
     
