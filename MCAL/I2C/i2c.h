@@ -9,6 +9,7 @@
 #define	I2C_H
 
 /* --------------- Section : Includes --------------- */
+#include <pic18f4620.h>
 #include "../Interrupt/INT_interrupts/MCAL_INTI.h"
 /* --------------- Section: Macro Declarations --------------- */
 #define I2C_MODULE_ENABLE               STD_ENABLE 
@@ -16,6 +17,8 @@
 
 #define I2C_MASTER_MODE                 STD_HIGH
 #define I2C_SLAVE_MODE                  STD_LOW
+
+#define I2C_START_CONDITION_DETECTED    STD_HIGH
 
 #define I2C_GENERAL_CALL_ENABLE         STD_ENABLE
 #define I2C_GENERAL_CALL_DISABLE        STD_DISABLE
@@ -28,7 +31,7 @@
 /* --------------- Section: Macro Functions Declarations --------------- */
 
 /*
- * A function-like-macro enables the MSSP module
+ * A function-like-macro enables the MSSP module.
  */
 #define I2C_MODULE_SET_ENABLE()         (SSPCON1bits.SSPEN = I2C_MODULE_ENABLE)
 /*
@@ -56,9 +59,18 @@
  */
 #define I2C_SCL_SET_INPUT()             (TRISCbits.RC3 = GPIO_DIRECTION_INPUT)
 /*
- * A function-like-macro configures the I2C mode
+ * A function-like-macro configures the I2C mode.
+ * @ref Chose mode from i2c_mode_config_t ENUM.
+ * @note any selection of I2C modes forces The SDA and SCL
+ * dio pins to be open-drain configured. So external pull-up
+ * resistors must be provided to the SCL and SDA lines.
  */
-#define I2C_SET_MODE(_M)                (SSPCON1bits.SSPM = _M)
+#define I2C_SET_MODE(MODE)              (SSPCON1bits.SSPM = MODE)
+
+/*
+ * A function-like-macro sends a START condition.
+ */
+#define I2C_MASTER_START_CONDITION()    (SSPCON2bits.SEN = STD_HIGH)
 /*
  * A function-like-macro clears the write collision
  * detect bit
@@ -126,12 +138,19 @@
  */
 #define I2C_SMBUS_SET_DISABLE()         (SSPSTATbits.CKE = I2C_SMBUS_DISABLE)  
 
+/*
+ * A function-like-macro waits blockingly 
+ * for an event.
+ */
+#define WAIT(SOME_THING)                (while(SOME_THING))
+
+#define I2C_START_STATUS()              (SSPSTATbits.START)
 /* --------------- Section: Data Type Declarations --------------- */
 typedef enum
 {
-    I2C_SLAVE_MODE_7BIT_ADDRESS                 = 0b0110,
-    I2C_SLAVE_MODE_10BIT_ADDRESS                = 0b0111,
-    I2C_MASTER_MODE_HW_CLOCK                    = 0b1000,
+    I2C_SLAVE_MODE_7BIT_ADDRESS_NO_INTERRUPT    = 0b0110,
+    I2C_SLAVE_MODE_10BIT_ADDRESS_NO_INTERRUPT   = 0b0111,
+    I2C_MASTER_MODE_SSPADD_CLOCK                = 0b1000,
     I2C_MASTER_MODE_SW_CLOCK                    = 0b1011,
     I2C_SLAVE_MODE_7BIT_ADDRESS_WITH_INTERRUPT  = 0b1110,
     I2C_SLAVE_MODE_10BIT_ADDRESS_WITH_INTERRUPT = 0b1111
@@ -139,6 +158,7 @@ typedef enum
 
 typedef struct 
 {
+    /* The device address if in Slave mode */
     uint8_t i2c_slave_address;
     i2c_mode_config_t i2c_mode_config;
     /*
@@ -172,7 +192,7 @@ typedef struct
     /*
      * I2C default interrupt handler
      */
-    interrupt_handler_t i2c_interrupt_handler;
+    interrupt_handler_t i2c_default_interrupt_handler;
     /*
      * I2C interrupt priority.
      */
