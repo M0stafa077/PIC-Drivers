@@ -19,6 +19,10 @@
 #define I2C_SLAVE_MODE                  STD_LOW
 
 #define I2C_START_CONDITION_DETECTED    STD_HIGH
+#define I2C_STOP_CONDITION_DETECTED     STD_HIGH
+
+#define I2C_ACK_RECEIVED                STD_LOW
+#define I2C_NOT_ACK_RECEIVED            STD_HIGH
 
 #define I2C_GENERAL_CALL_ENABLE         STD_ENABLE
 #define I2C_GENERAL_CALL_DISABLE        STD_DISABLE
@@ -71,6 +75,11 @@
  * A function-like-macro sends a START condition.
  */
 #define I2C_MASTER_START_CONDITION()    (SSPCON2bits.SEN = STD_HIGH)
+
+/*
+ * A function-like-macro sends a STOP condition.
+ */
+#define I2C_MASTER_STOP_CONDITION()    (SSPCON2bits.PEN = STD_HIGH)
 /*
  * A function-like-macro clears the write collision
  * detect bit
@@ -145,6 +154,7 @@
 #define WAIT(SOME_THING)                (while(SOME_THING))
 
 #define I2C_START_STATUS()              (SSPSTATbits.START)
+#define I2C_STOP_STATUS()               (SSPSTATbits.STOP)
 /* --------------- Section: Data Type Declarations --------------- */
 typedef enum
 {
@@ -260,11 +270,13 @@ Std_ReturnType I2C_Master_Send_Stop(const i2c_t *i2c_obj);
  * @param i2c_obj A pointer to an i2c configuration
  * structure
  * @param data The data to be written on the I2C bus.
+ * @param ack_state a pointer to a uint8_t to hold the 
+ * acknowledge state received from the receiver.
  * @return Status of the function
  *          (E_OK) : The function done successfully
  *          (E_NOT_OK) : The function has issue to perform this action
  */
-Std_ReturnType I2C_Write_Byte(const i2c_t *i2c_obj, const uint8_t data);
+Std_ReturnType I2C_Write_Byte_Blocking(const i2c_t *i2c_obj, const uint8_t data, uint8_t *ack_state);
 /**
  * @brief A software interface reads from the 
  * I2C bus.
