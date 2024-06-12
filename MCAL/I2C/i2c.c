@@ -48,13 +48,13 @@ Std_ReturnType I2C_Init(const i2c_t *i2c_obj)
                     case I2C_MASTER_MODE_SW_CLOCK: /* NOT DETERMINED */
                         break;
                     case I2C_MASTER_MODE_SSPADD_CLOCK:
+                        /* Same as default */
+                    default: 
                         SSPADD = (uint8_t) (((_XTAL_FREQ / 4.0) / (i2c_obj->i2c_master_clock_freq)) - 1);
-                        break;
-                    default: /* Nothing */
                         break;
                 }  
                break;
-           case I2C_SLAVE_MODE :
+            case I2C_SLAVE_MODE :
                /* 1. Configure the general call */
                switch(i2c_obj->i2c_cfg.i2c_general_call_stat)
                {
@@ -78,7 +78,7 @@ Std_ReturnType I2C_Init(const i2c_t *i2c_obj)
                /* 5. Assign the device Slave address */
                SSPADD = (i2c_obj -> i2c_cfg.i2c_slave_address);
                break;
-           default : 
+            default : 
                ret = E_NOT_OK;
                break; 
         }
@@ -135,7 +135,11 @@ Std_ReturnType I2C_DeInit(const i2c_t *i2c_obj)
     }
     else
     {
+        /* Disable the Interrupts for I2C Module */
+        INTI_I2C_INTERRUPT_DISABLE();
         
+        /* Disable the I2C module */
+        I2C_MODULE_SET_DISABLE();
     }
     return ret;
 }
@@ -161,11 +165,11 @@ Std_ReturnType I2C_Master_Send_Start(const i2c_t *i2c_obj)
         /* Set the START Enable bit */
         I2C_MASTER_START_CONDITION();
         /* Wait for the START condition to be transmitted on the bus */
-        WAIT(SSPCON2bits.SEN);
+        while(SSPCON2bits.SEN);
         /* Clear the Interrupt flag */
         INTI_I2C_CLR_FLAG();
         /* Check the detection of the start condition on the bus */
-        if(I2C_START_CONDITION_DETECTED == I2C_START_STATUS)
+        if(I2C_START_CONDITION_DETECTED == I2C_START_STATUS())
         {
             ret = E_OK;
         }
@@ -198,7 +202,7 @@ Std_ReturnType I2C_Master_Send_Repeated_Start(const i2c_t *i2c_obj)
         /* Set the START Enable bit */
         I2C_MASTER_START_CONDITION();
         /* Wait for the START condition to be transmitted on the bus */
-        WAIT(SSPCON2bits.RSEN);
+        while(SSPCON2bits.RSEN);
         /* Clear the Interrupt flag */
         INTI_I2C_CLR_FLAG();
     }
@@ -226,7 +230,7 @@ Std_ReturnType I2C_Master_Send_Stop(const i2c_t *i2c_obj)
         /* Set the START Enable bit */
         I2C_MASTER_STOP_CONDITION();
         /* Wait for the START condition to be transmitted on the bus */
-        WAIT(SSPCON2bits.PEN);
+        while(SSPCON2bits.PEN);
         /* Clear the Interrupt flag */
         INTI_I2C_CLR_FLAG();
         /* Check the detection of the start condition on the bus */
@@ -266,7 +270,7 @@ Std_ReturnType I2C_Write_Byte_Blocking(const i2c_t *i2c_obj, const uint8_t data,
         /* Write the byte into the Buffer Register */
         SSPBUF = data;
         /* Wait for the data in buffer register to be put in the shift register */
-        WAIT(SSPSTAT.BF);
+        while(SSPSTATbits.BF);
         /* Clear the Interrupt flag */
         INTI_I2C_CLR_FLAG();
         /* Process the ack state received */
@@ -298,7 +302,7 @@ Std_ReturnType I2C_Read_Byte_Blocking(const i2c_t *i2c_obj, uint8_t ack, uint8_t
         /* Enable the receive by Master Mode */
         I2C_MASTER_RECEIVE_ENABLE();
         /* Wait for the Reception to complete */
-        WAIT(!SSPSTATbits.BF);
+        while(!SSPSTATbits.BF);
         /* Store the received data */
         *data = SSPBUF;
         /* Send ACK or NACK after the reception */
@@ -307,12 +311,12 @@ Std_ReturnType I2C_Read_Byte_Blocking(const i2c_t *i2c_obj, uint8_t ack, uint8_t
             case I2C_MASTER_ACK:
                 SSPCON2bits.ACKDT = I2C_MASTER_ACK;
                 SSPCON2bits.ACKEN = 1;
-                WAIT(SSPCON2bits.ACKEN);
+                while(SSPCON2bits.ACKEN);
                 break;
             case I2C_MASTER_NACK:
                 SSPCON2bits.ACKDT = I2C_MASTER_NACK;
                 SSPCON2bits.ACKEN = 1;
-                WAIT(SSPCON2bits.ACKEN);
+                while(SSPCON2bits.ACKEN);
                 break;
             default: /* Nothing */
                 break;
@@ -320,52 +324,86 @@ Std_ReturnType I2C_Read_Byte_Blocking(const i2c_t *i2c_obj, uint8_t ack, uint8_t
     }
     return ret;
 }
+/**
+ * @brief A software interface does all the steps to
+ * write a byte on the i2c bus.
+ * @param data The data to be sent on the bus
+ * @param address The address of the slave to receive
+ * the data
+ * @return Status of the function
+ *          (E_OK) : The function done successfully
+ *          (E_NOT_OK) : The function has issue to perform this action
+ */
+Std_ReturnType I2C_Send_Byte(const i2c_t *i2c_obj, uint8_t data, uint8_t address)
+{
+    Std_ReturnType ret = E_OK;
+    if(NULL == i2c_obj)
+    {
+        ret = E_NOT_OK;
+    }
+    else
+    {
+        uint8_t ack = 0;
+
+        ret = I2C_Master_Send_Start(i2c_obj);
+        
+        ret = I2C_Write_Byte_Blocking(i2c_obj, address, &ack);
+        ret = I2C_Write_Byte_Blocking(i2c_obj, data, &ack);
+
+        ret = I2C_Master_Send_Stop(i2c_obj);        
+    }
+    return ret;
+}
 
 /* --------------- Section : Helper Functions Definitions --------------- */
 static void I2C_Interrupt_Cfg(const i2c_t *i2c_obj)
-{
-/* Enable the Interrupts for the SPI module */
-    INTI_I2C_INTERRUPT_ENABLE();
-    /* Assign the Interrupt handlers */
-    I2C_Default_Interrupt_Handler = i2c_obj -> i2c_default_interrupt_handler;
-    I2C_Default_Write_Collision_Handler = i2c_obj->i2c_write_collision_handler;
-    I2C_Default_Overflow_Handler = i2c_obj->i2c_receive_overflow_handler;
-    
+{    
+#if I2C_INTERRUPT_FEATURE == INTERRUPT_ENABLE
+        // 1- Enable Global & Peripheral Interrupts
+        INTERRUPT_GIEH_ENABLE();    /* Enable Global Interrupts */
+        INTERRUPT_GIEL_ENABLE();    /* Enable Peripheral Interrupts */
+        /* Clear the interrupt flag and enable the interrupts */
+        INTI_I2C_INTERRUPT_ENABLE();
+        INTI_I2C_CLR_FLAG();
+        /* Assign the Interrupt handlers */
+        I2C_Default_Interrupt_Handler = i2c_obj -> i2c_default_interrupt_handler;
+        I2C_Default_Write_Collision_Handler = i2c_obj->i2c_write_collision_handler;
+        I2C_Default_Overflow_Handler = i2c_obj->i2c_receive_overflow_handler;
 #if INTERRUPT_PRIORITY_FEATURE == INTERRUPT_ENABLE
         /* Enable the Interrupt priority feature */
         INTERRUPT_PRIORITY_ENABLE();
         /* Assign the specified interrupt priority */
         if(PRIORITY_HIGH == i2c_obj -> i2c_interrupt_priority)
-        {
-            INTERRUPT_GIEH_ENABLE();
-            INTI_SPI_INTERRUPT_PRIORITY_HIGH();
-        }
+            { INTI_I2C_INTERRUPT_PRIORITY_HIGH(); }
         else if(PRIORITY_LOW == i2c_obj->i2c_interrupt_priority)
-        {
-            INTERRUPT_GIEL_ENABLE();
-            INTI_SPI_INTERRUPT_PRIORITY_LOW();
-        }
+            { INTI_I2C_INTERRUPT_PRIORITY_LOW(); }
         else
-            { /* Nothing */ }
-#else         
+            { INTI_I2C_INTERRUPT_PRIORITY_HIGH(); }
+#else       
         INTERRUPT_GIEH_ENABLE();
         INTERRUPT_GIEL_ENABLE();
+#endif
 #endif
 }
 
 void I2C_ISR(void)
 {
-    /* Clear the interrupt flag */
+    /* 1. Stretch the clock till the computations are done */
+    I2C_CLOCK_STRTCH();
+    
+    /* 2. Clear the interrupt flag */
     INTI_I2C_CLR_FLAG();
     
-    /* 2. Call the interrupt service routine function */
+    /* 3. Call the interrupt service routine function */
     if(I2C_Default_Interrupt_Handler)
     {
         I2C_Default_Interrupt_Handler();
     }
+    /* 4. Release the clock line */
+    I2C_CLOCK_RELEASE();
 }
 
-void I2C_Write_Collision_ISr(void)
+void I2C_Write_Collision_ISR(void)
 {
     
 }
