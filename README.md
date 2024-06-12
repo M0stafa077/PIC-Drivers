@@ -28,6 +28,7 @@ By developing these drivers myself, I have endeavored to ensure high quality, op
 6. **Serial Peripheral Interface (SPI)**: Communication with other devices using SPI protocol.
 7. **Timers (0, 1, 2, 3)**: Timer functionality for precise timing and event triggering.
 8. **UART Module**: Serial communication via UART.
+9. **Inter-Integrated Circuits**: Communication with other devices using I2C protocol.
 
 ### ECUAL (Electronic Unit Abstraction Layer)
 
